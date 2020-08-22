@@ -38,20 +38,17 @@ int main(int argc, char **argv) {
 	char in_buffer[MSG_BUFFER_SIZE];
 	printf("Ask for a token(Press <ENTER>): ");
 	char temp_buf[10];
-	while(fgets(temp_buf, 2, stdin)) {
-		if(mq_send(qd_server, client_queue_name, strlen(client_queue_name)+1, 0)==-1) {
-			perror("Server: Not able to send message to server");
-			continue;
-		}
-
-		if(mq_receive(qd_client, in_buffer, MSG_BUFFER_SIZE, NULL)==-1) {
-			perror("Client: mq_receive");
-			exit(1);
-		}
-
-		printf("Client: Token received from server: %s\n\n", in_buffer);
-		printf("Ask for a token(Press <ENTER>): ");
+	fgets(temp_buf, 2, stdin);
+	if(mq_send(qd_server, client_queue_name, strlen(client_queue_name)+1, 0)==-1) {
+		perror("Server: Not able to send message to server");
 	}
+
+	if(mq_receive(qd_client, in_buffer, MSG_BUFFER_SIZE, NULL)==-1) {
+		perror("Client: mq_receive");
+		exit(1);
+	}
+
+	printf("Client: Token received from server: %s\n\n", in_buffer);
 
 	if(mq_close(qd_client)==-1) {
 		perror("Client: mq_close");
