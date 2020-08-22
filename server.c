@@ -6,12 +6,19 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <mqueue.h>
+#include <signal.h>
 
 #define SERVER_QUEUE_NAME "/sp-example-server"
 #define QUEUE_PERMISSIONS 0660
 #define MAX_MESSAGES 10
 #define MAX_MSG_SIZE 256
 #define MSG_BUFFER_SIZE MAX_MSG_SIZE + 10
+
+int DO_CLOSE = 0;
+
+void handle_sigint(int sig) {
+	DO_CLOSE = 1;
+}
 
 int main(int argc, char **argv) {
 	mqd_t qd_server, qd_client;
@@ -33,7 +40,10 @@ int main(int argc, char **argv) {
 
 	char in_buffer[MSG_BUFFER_SIZE];
 	char out_buffer[MSG_BUFFER_SIZE];
+	signal(SIGINT, handle_sigint);
 	while(1) {
+		if(DO_CLOSE) { break; }
+
 		if(mq_receive(qd_server, in_buffer, MSG_BUFFER_SIZE, NULL)==-1) {
 			perror("Server: mq_receive");
 			exit(1);
@@ -53,5 +63,15 @@ int main(int argc, char **argv) {
 
 		printf("Server: response sent to client.\n");
 		token_number++;
+	}
+
+	if(mq_close(qd_server)==-1) {
+		perror("Server: mq_close");
+		exit(1);
+	}
+
+	if(mq_unlink(SERVER_QUEUE_NAME)==-1) {
+		perror("Server: mq_unlink");
+		exit(1);
 	}
 }
